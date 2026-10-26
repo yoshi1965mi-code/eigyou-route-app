@@ -88,6 +88,8 @@ const q=id=>document.getElementById(id);
 const escape=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 let client=null,user=null,customers=[],visits=[],today=new Set(),screen='customers',loading=false,recoveryMode=false;
 const selectedKey='eigyou-route-cloud-today-v1';
+ const BASE_ADDRESS='横浜市青葉区荏田西2-29-24';
+ const routeState={mode:'facility',custom:''};
 const status=(msg,error=false)=>{q('cloudStatus').textContent=msg;q('cloudStatus').className=error?'cloud-error':'cloud-muted'};
 const authStatus=(msg,error=false)=>{q('cloudAuthStatus').textContent=msg;q('cloudAuthStatus').className=error?'cloud-error':'cloud-muted'};
 const recoveryStatus=(msg,error=false)=>{q('cloudRecoveryStatus').textContent=msg;q('cloudRecoveryStatus').className=error?'cloud-error':'cloud-muted'};
@@ -189,8 +191,18 @@ function render(){
    target.innerHTML='<h3>職員共有の訪問履歴（最新200件）</h3>'+(visits.map(h=>{const c=customers.find(c=>code(c)===String(h.customer_id));return `<div class="cloud-history"><strong>${escape(name(c)||('営業先ID '+h.customer_id))}</strong><div class="cloud-muted">${escape(h.visited_at?new Date(h.visited_at).toLocaleString('ja-JP'):'')}　主担当：${escape(h.visitor_name||'未入力')}</div><div>同行者：${escape((h.companions||[]).join('・')||'なし')}</div><div>メモ：${escape(h.memo||'')}</div></div>`}).join('')||'<p>共有訪問履歴はまだありません。</p>');return;
  }
  const onlyToday=screen==='today';
- target.innerHTML=`<h3>${onlyToday?'本日の営業先':'営業先一覧'}（<span id="cloudCount">0</span>件）</h3><div class="cloud-grid"><label>営業先名で検索<input id="cloudSearch" type="search" lang="ja" autocomplete="off" placeholder="営業先名だけで検索"></label><label>区<select id="cloudArea"><option value="">すべて</option><option>青葉区</option><option>緑区</option><option>都筑区</option></select></label></div><div id="cloudList"></div>`;
+  const routeControls=onlyToday?`<section aria-label="営業ルート作成" style="background:#f0f6fc;border:1px solid #b7c8d8;padding:14px;border-radius:10px;margin:15px 0"><h3 style="margin:0 0 10px">営業ルートを作成</h3><div class="cloud-grid"><label>出発地点<select id="routeOrigin"><option value="facility">施設から（標準）</option><option value="current">現在地から</option><option value="custom">住所を指定</option></select></label><label id="routeCustomBox" class="cloud-hidden">出発地の住所<input id="routeCustom" lang="ja" placeholder="出発する住所を入力" autocomplete="street-address"></label></div><p id="routeDescription" class="cloud-muted"></p><div class="cloud-actions"><button id="cloudOpenRoute" class="primary" type="button">Googleマップでルートを開く</button></div><p class="cloud-muted">訪問先は「本日の営業先」の表示順で経由します。Googleマップ上で経路を確認してください。最短順の自動計算は行いません。現在地利用時は位置情報の許可が必要な場合があります。</p></section>`:'';
+ target.innerHTML=`<h3>${onlyToday?'本日の営業先':'営業先一覧'}（<span id="cloudCount">0</span>件）</h3><div class="cloud-grid"><label>営業先名で検索<input id="cloudSearch" type="search" lang="ja" autocomplete="off" placeholder="営業先名だけで検索"></label><label>区<select id="cloudArea"><option value="">すべて</option><option>青葉区</option><option>緑区</option><option>都筑区</option></select></label></div><div id="cloudList"></div>${routeControls}`;
  const list=q('cloudList'),search=q('cloudSearch'),areaFilter=q('cloudArea');
+  if(onlyToday){
+    q('routeOrigin').value=routeState.mode;
+    q('routeCustom').value=routeState.custom;
+    function updateOrigin(){routeState.mode=q('routeOrigin').value;routeState.custom=q('routeCustom').value;q('routeCustomBox').classList.toggle('cloud-hidden',routeState.mode!=='custom');q('routeDescription').textContent=routeState.mode==='facility'?'施設（'+BASE_ADDRESS+'）を出発・帰着地点にします。':routeState.mode==='current'?'現在地から出発し、最後の訪問先で終了します。':'指定住所から出発し、指定住所に戻ります。'}
+    q('routeOrigin').onchange=updateOrigin;
+    q('routeCustom').oninput=()=>{routeState.custom=q('routeCustom').value};
+    q('cloudOpenRoute').onclick=openSharedRoute;
+    updateOrigin();
+  }
  function draw(){
    const find=search.value.toLocaleLowerCase(),ward=areaFilter.value;
    const selected=customers.filter(c=>(!onlyToday||today.has(code(c)))&&(!ward||(area(c)||address(c)).includes(ward))&&String(name(c)).toLocaleLowerCase().includes(find));
@@ -201,6 +213,34 @@ function render(){
  }
  let composing=false;search.addEventListener('compositionstart',()=>composing=true);search.addEventListener('compositionend',draw);search.addEventListener('input',e=>{if(!composing&&!e.isComposing)draw()});areaFilter.onchange=draw;draw();
 }
+ function googleDirections(params){
+   const url=new URL('https://www.google.com/maps/dir/');
+   url.searchParams.set('api','1');
+   if(params.origin)url.searchParams.set('origin',params.origin);
+   url.searchParams.set('destination',params.destination);
+   if(params.waypoints.length)url.searchParams.set('waypoints',params.waypoints.join('|'));
+   url.searchParams.set('travelmode','driving');
+   return url.toString();
+ }
+ function openSharedRoute(){
+   const chosen=customers.filter(c=>today.has(code(c))); 
+   if(!chosen.length)return alert('先に「本日の営業先」に訪問先を追加してください。');
+   const stops=chosen.map(c=>({name:String(name(c)||'名称未登録'),place:String(address(c)||name(c)||'').trim()}));
+   if(stops.some(s=>!s.place))return alert('住所も名称もない営業先があるため、ルートを作れません。');
+   const mode=routeState.mode;
+   const start=mode==='facility'?BASE_ADDRESS:routeState.custom.trim();
+   if(mode==='custom'&&!start)return alert('出発地の住所を入力してください。');
+   // Google Maps URL: if origin omitted, Maps uses the browser/device current location.
+   const origin=mode==='current'?'':start;
+   const destination=mode==='current'?stops[stops.length-1].place:start;
+   const waypoints=mode==='current'?stops.slice(0,-1).map(x=>x.place):stops.map(x=>x.place);
+   const maximum=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)?3:9;
+   if(waypoints.length>maximum)return alert('この端末のGoogleマップで扱える経由地の目安（'+maximum+'件）を超えています。訪問先を減らして複数回に分けてください。');
+   const url=googleDirections({origin,destination,waypoints});
+   if(url.length>1900)return alert('住所が長く、GoogleマップのURL制限を超える可能性があります。訪問先を分割してください。');
+   const opened=window.open(url,'_blank','noopener,noreferrer');
+   // Some browsers return null for noopener even when opened successfully.
+ }
 async function recordVisit(id){
  const c=customers.find(c=>code(c)===id);if(!c||!user)return;
  const lead=prompt('訪問者（主担当）の名前を入力してください。');if(lead===null)return;
