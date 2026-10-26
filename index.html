@@ -89,7 +89,7 @@ const escape=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>
 let client=null,user=null,customers=[],visits=[],today=new Set(),screen='customers',loading=false,recoveryMode=false;
 const selectedKey='eigyou-route-cloud-today-v1';
  const BASE_ADDRESS='横浜市青葉区荏田西2-29-24';
- const routeState={mode:'facility',custom:''};
+ const routeState={mode:'facility',custom:'',end:'facility'};
 const status=(msg,error=false)=>{q('cloudStatus').textContent=msg;q('cloudStatus').className=error?'cloud-error':'cloud-muted'};
 const authStatus=(msg,error=false)=>{q('cloudAuthStatus').textContent=msg;q('cloudAuthStatus').className=error?'cloud-error':'cloud-muted'};
 const recoveryStatus=(msg,error=false)=>{q('cloudRecoveryStatus').textContent=msg;q('cloudRecoveryStatus').className=error?'cloud-error':'cloud-muted'};
@@ -191,17 +191,27 @@ function render(){
    target.innerHTML='<h3>職員共有の訪問履歴（最新200件）</h3>'+(visits.map(h=>{const c=customers.find(c=>code(c)===String(h.customer_id));return `<div class="cloud-history"><strong>${escape(name(c)||('営業先ID '+h.customer_id))}</strong><div class="cloud-muted">${escape(h.visited_at?new Date(h.visited_at).toLocaleString('ja-JP'):'')}　主担当：${escape(h.visitor_name||'未入力')}</div><div>同行者：${escape((h.companions||[]).join('・')||'なし')}</div><div>メモ：${escape(h.memo||'')}</div></div>`}).join('')||'<p>共有訪問履歴はまだありません。</p>');return;
  }
  const onlyToday=screen==='today';
-  const routeControls=onlyToday?`<section aria-label="営業ルート作成" style="background:#f0f6fc;border:1px solid #b7c8d8;padding:14px;border-radius:10px;margin:15px 0"><h3 style="margin:0 0 10px">営業ルートを作成</h3><div class="cloud-grid"><label>出発地点<select id="routeOrigin"><option value="facility">施設から（標準）</option><option value="current">現在地から</option><option value="custom">住所を指定</option></select></label><label id="routeCustomBox" class="cloud-hidden">出発地の住所<input id="routeCustom" lang="ja" placeholder="出発する住所を入力" autocomplete="street-address"></label></div><p id="routeDescription" class="cloud-muted"></p><div class="cloud-actions"><button id="cloudOpenRoute" class="primary" type="button">Googleマップでルートを開く</button></div><p class="cloud-muted">訪問先は「本日の営業先」の表示順で経由します。Googleマップ上で経路を確認してください。最短順の自動計算は行いません。現在地利用時は位置情報の許可が必要な場合があります。</p></section>`:'';
+  const routeControls=onlyToday?`<section aria-label="営業ルート作成" style="background:#f0f6fc;border:1px solid #b7c8d8;padding:14px;border-radius:10px;margin:15px 0"><h3 style="margin:0 0 10px">営業ルートを作成</h3><div class="cloud-grid"><label>出発地点<select id="routeOrigin"><option value="facility">施設から（標準）</option><option value="current">現在地から</option><option value="custom">住所を指定</option></select></label><label id="routeCustomBox" class="cloud-hidden">出発地の住所<input id="routeCustom" lang="ja" placeholder="出発する住所を入力" autocomplete="street-address"></label><label>終点<select id="routeDestination"><option value="facility">施設に戻る（標準）</option><option value="last">最後の営業先で終了</option></select></label></div><p id="routeDescription" class="cloud-muted"></p><div class="cloud-actions"><button id="cloudOpenRoute" class="primary" type="button">Googleマップでルートを開く</button></div><p class="cloud-muted">訪問先は「本日の営業先」の表示順で経由します。Googleマップ上で経路を確認してください。最短順の自動計算は行いません。現在地利用時はGoogleマップ側で位置情報の許可が必要な場合があります。</p></section>`:'';
  target.innerHTML=`<h3>${onlyToday?'本日の営業先':'営業先一覧'}（<span id="cloudCount">0</span>件）</h3><div class="cloud-grid"><label>営業先名で検索<input id="cloudSearch" type="search" lang="ja" autocomplete="off" placeholder="営業先名だけで検索"></label><label>区<select id="cloudArea"><option value="">すべて</option><option>青葉区</option><option>緑区</option><option>都筑区</option></select></label></div><div id="cloudList"></div>${routeControls}`;
  const list=q('cloudList'),search=q('cloudSearch'),areaFilter=q('cloudArea');
   if(onlyToday){
     q('routeOrigin').value=routeState.mode;
     q('routeCustom').value=routeState.custom;
-    function updateOrigin(){routeState.mode=q('routeOrigin').value;routeState.custom=q('routeCustom').value;q('routeCustomBox').classList.toggle('cloud-hidden',routeState.mode!=='custom');q('routeDescription').textContent=routeState.mode==='facility'?'施設（'+BASE_ADDRESS+'）を出発・帰着地点にします。':routeState.mode==='current'?'現在地から出発し、最後の訪問先で終了します。':'指定住所から出発し、指定住所に戻ります。'}
-    q('routeOrigin').onchange=updateOrigin;
+    q('routeDestination').value=routeState.end;
+    function updateRouteOptions(){
+      routeState.mode=q('routeOrigin').value;
+      routeState.custom=q('routeCustom').value;
+      routeState.end=q('routeDestination').value;
+      q('routeCustomBox').classList.toggle('cloud-hidden',routeState.mode!=='custom');
+      const startLabel=routeState.mode==='facility'?'施設（'+BASE_ADDRESS+'）':routeState.mode==='current'?'現在地':'指定した住所';
+      const endLabel=routeState.end==='facility'?'施設（'+BASE_ADDRESS+'）':'最後の営業先';
+      q('routeDescription').textContent='出発：'+startLabel+' ／ 終点：'+endLabel+'。選んだ営業先を順番に回ります。';
+    }
+    q('routeOrigin').onchange=updateRouteOptions;
+    q('routeDestination').onchange=updateRouteOptions;
     q('routeCustom').oninput=()=>{routeState.custom=q('routeCustom').value};
     q('cloudOpenRoute').onclick=openSharedRoute;
-    updateOrigin();
+    updateRouteOptions();
   }
  function draw(){
    const find=search.value.toLocaleLowerCase(),ward=areaFilter.value;
@@ -232,8 +242,8 @@ function render(){
    if(mode==='custom'&&!start)return alert('出発地の住所を入力してください。');
    // Google Maps URL: if origin omitted, Maps uses the browser/device current location.
    const origin=mode==='current'?'':start;
-   const destination=mode==='current'?stops[stops.length-1].place:start;
-   const waypoints=mode==='current'?stops.slice(0,-1).map(x=>x.place):stops.map(x=>x.place);
+   const destination=routeState.end==='facility'?BASE_ADDRESS:stops[stops.length-1].place;
+   const waypoints=(routeState.end==='facility'?stops:stops.slice(0,-1)).map(x=>x.place);
    const maximum=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)?3:9;
    if(waypoints.length>maximum)return alert('この端末のGoogleマップで扱える経由地の目安（'+maximum+'件）を超えています。訪問先を減らして複数回に分けてください。');
    const url=googleDirections({origin,destination,waypoints});
