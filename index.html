@@ -2,7 +2,13 @@
 <html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>営業ルート管理</title><style>
 :root{font-family:system-ui,-apple-system,'Yu Gothic',sans-serif;color:#203047;background:#f3f6fa}*{box-sizing:border-box}body{margin:0}header{background:#174a76;color:white;padding:18px 20px}h1{font-size:1.35rem;margin:0}header small{opacity:.9}.wrap{max-width:1080px;margin:auto;padding:16px}.notice{background:#fff7e6;border-left:4px solid #d38a1e;padding:12px;border-radius:6px;margin-bottom:15px}.toolbar,.filters{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}button,.btn,select,input{font:inherit;border-radius:8px;border:1px solid #b7c8d8;padding:10px;background:white}button{cursor:pointer}button.primary,.btn.primary{background:#1769a5;color:white;border-color:#1769a5}button:disabled{opacity:.5;cursor:not-allowed}.tabs{display:flex;flex-wrap:wrap;gap:5px}.tabs button[aria-selected=true]{background:#174a76;color:white}.panel{background:white;border-radius:12px;padding:16px;margin:12px 0;box-shadow:0 1px 6px #12253b16}.item{border-bottom:1px solid #e2e7ed;padding:12px 0;display:flex;justify-content:space-between;align-items:start;gap:12px}.item:last-child{border:0}.muted{color:#617286;font-size:.9rem}.actions{display:flex;gap:6px;flex-wrap:wrap}input[type=search]{flex:1;min-width:190px}textarea{width:100%;min-height:75px;font:inherit;border:1px solid #b7c8d8;border-radius:8px;padding:8px}a{color:#1769a5}#file{max-width:100%}@media(max-width:600px){.item{display:block}.actions{margin-top:9px}.wrap{padding:10px}}
 .visitor-controls{margin-top:9px;padding:9px;background:#f3f6fa;border-radius:8px}.visitor-controls>label{font-weight:600;font-size:.9rem}.visitor-checks{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:7px}.visitor-checks label{font-size:.9rem;white-space:nowrap;cursor:pointer}.visitor-checks input{width:17px;height:17px;vertical-align:middle}
-.edit-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}.edit-grid label{display:flex;flex-direction:column;gap:4px;font-weight:600}.edit-grid input,.edit-grid select{width:100%}.manage-row{display:flex;justify-content:space-between;gap:8px;align-items:center;border-bottom:1px solid #ddd;padding:8px 0;flex-wrap:wrap}.visitor-controls select{max-width:100%;margin:5px 0 9px;display:block;min-width:200px}</style></head><body><header><h1>営業ルート管理</h1><small>青葉区・緑区・都筑区｜スマホ・パソコン対応</small></header><main class="wrap"><div class="notice"><b>情報保護：</b>営業先データはこのHTMLには含まれていません。Excelファイルは端末内で読み込みます。GitHubにはExcelファイルや書き出したJSONをアップロードしないでください。端末間の自動同期は未対応です。別々のスマホの履歴は共有されません。</div><section class="panel"><h2>① Excelデータの読み込み</h2><p class="muted">お手元の .xlsm / .xlsx を選択してください。初回読み込みにはインターネット接続が必要です。VBAマクロは実行しません。</p><input id="file" type="file" accept=".xlsx,.xlsm"><div class="toolbar"><button id="save" class="primary">端末に保存</button><button id="export">バックアップを出力</button><button id="import">バックアップを読み込む</button><input type="file" id="jsonFile" accept=".json" hidden></div><div id="status" class="muted" role="status">データ未読み込み</div></section><nav class="tabs" aria-label="画面切り替え"><button data-tab="list" aria-selected="true">営業先検索</button><button data-tab="today">本日の営業先</button><button data-tab="history">訪問履歴</button><button data-tab="summary">集計・設定</button></nav><section class="panel" id="content"></section></main><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script>
+.edit-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}.edit-grid label{display:flex;flex-direction:column;gap:4px;font-weight:600}.edit-grid input,.edit-grid select{width:100%}.manage-row{display:flex;justify-content:space-between;gap:8px;align-items:center;border-bottom:1px solid #ddd;padding:8px 0;flex-wrap:wrap}.visitor-controls select{max-width:100%;margin:5px 0 9px;display:block;min-width:200px}</style><style>
+#cloud-app{max-width:1080px;margin:0 auto;padding:16px}.cloud-panel{background:#fff;border-radius:12px;padding:18px;margin:14px 0;box-shadow:0 1px 5px #12253b18}.cloud-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.cloud-grid label{display:flex;flex-direction:column;gap:5px}.cloud-panel input,.cloud-panel select,.cloud-panel textarea{width:100%}.cloud-panel button{margin:4px}.cloud-muted{color:#516273;font-size:.92rem}.cloud-error{color:#a12624;white-space:pre-wrap}.cloud-ok{color:#17663c;white-space:pre-wrap}.cloud-row{border-top:1px solid #ddd;padding:12px 0}.cloud-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px}.cloud-bar{background:#e6eff7;padding:10px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}.cloud-bar button[aria-pressed=true]{background:#174a76;color:#fff}.cloud-history{padding:8px 0;border-top:1px solid #ddd}.cloud-hidden{display:none!important}
+</style></head><body><header><h1>営業ルート管理</h1><small>青葉区・緑区・都筑区｜スマホ・パソコン対応</small></header><div class="cloud-bar"><strong>保存方式：</strong><button id="cloudMode" aria-pressed="true">職員共有（Supabase）</button><button id="offlineMode" aria-pressed="false">従来の端末内モード</button><span class="cloud-muted">職員共有モードのデータは承認された職員のみ閲覧可能（Supabaseの設定が必要）</span></div>
+<div id="cloud-app"><div class="cloud-panel"><h2>職員共有モード</h2><p class="cloud-muted">営業先データはHTMLに含まれていません。Supabaseへの接続情報と職員ログインが必要です。秘密鍵（secret / service_role）は絶対に入力しないでください。</p><div class="cloud-grid"><label>Supabase Project URL<input id="cloudUrl" type="url" autocomplete="off" value="https://awrxftzzmzcquvoqmogc.supabase.co" placeholder="https://...supabase.co"></label><label>公開可能キー（sb_publishable_... のみ）<input id="cloudKey" type="password" autocomplete="off" placeholder="sb_publishable_..."></label></div><div class="cloud-actions"><button id="cloudConnect" class="primary">接続する</button><span class="cloud-muted">URLと公開可能キーはこの端末にだけ保存します。</span></div><p id="cloudStatus" role="status" class="cloud-muted">まだ接続していません。</p></div>
+<div class="cloud-panel cloud-hidden" id="cloudAuth"><h3>職員ログイン</h3><div class="cloud-grid"><label>メールアドレス<input id="cloudEmail" type="email" autocomplete="username" placeholder="メールアドレス"></label><label>パスワード<input id="cloudPassword" type="password" autocomplete="current-password" placeholder="パスワード"></label></div><div class="cloud-actions"><button id="cloudLogin" class="primary">ログイン</button><button id="cloudReset">パスワード再設定メール</button><button id="cloudLogout" class="cloud-hidden">ログアウト</button></div><p id="cloudAuthStatus" class="cloud-muted"></p></div>
+<div class="cloud-panel cloud-hidden" id="cloudRecovery"><h2>パスワードを変更する</h2><p class="cloud-muted">メールの再設定リンクから開いた場合は、新しいパスワードを2回入力してください。接続情報が未設定なら、上の「公開可能キー」を入力して「接続する」を押してください。</p><div class="cloud-grid"><label>新しいパスワード（12文字以上）<input id="cloudNewPassword" type="password" autocomplete="new-password" minlength="12" placeholder="新しいパスワード"></label><label>新しいパスワード（確認）<input id="cloudNewPasswordConfirm" type="password" autocomplete="new-password" minlength="12" placeholder="もう一度入力"></label></div><div class="cloud-actions"><button id="cloudChangePassword" class="primary">パスワードを変更する</button></div><p id="cloudRecoveryStatus" role="status" class="cloud-muted"></p></div>
+<div class="cloud-panel cloud-hidden" id="cloudWorkspace"><div class="cloud-actions"><button id="cloudRefresh" class="primary">共有データを更新</button><button id="cloudShowCustomers">営業先一覧</button><button id="cloudShowToday">本日の営業先</button><button id="cloudShowHistory">共有訪問履歴</button></div><p class="cloud-muted">営業先182件はSupabaseに登録済みです。読み込みにはcustomers/visit_historyをData APIに公開し、職員承認が必要です。画面上の表示件数は登録済み件数と異なる場合があります。</p><div id="cloudContent"></div></div></div><main class="wrap" id="local-app" hidden><div class="notice"><b>情報保護：</b>営業先データはこのHTMLには含まれていません。Excelファイルは端末内で読み込みます。GitHubにはExcelファイルや書き出したJSONをアップロードしないでください。端末間の自動同期は未対応です。別々のスマホの履歴は共有されません。</div><section class="panel"><h2>① Excelデータの読み込み</h2><p class="muted">お手元の .xlsm / .xlsx を選択してください。初回読み込みにはインターネット接続が必要です。VBAマクロは実行しません。</p><input id="file" type="file" accept=".xlsx,.xlsm"><div class="toolbar"><button id="save" class="primary">端末に保存</button><button id="export">バックアップを出力</button><button id="import">バックアップを読み込む</button><input type="file" id="jsonFile" accept=".json" hidden></div><div id="status" class="muted" role="status">データ未読み込み</div></section><nav class="tabs" aria-label="画面切り替え"><button data-tab="list" aria-selected="true">営業先検索</button><button data-tab="today">本日の営業先</button><button data-tab="history">訪問履歴</button><button data-tab="summary">集計・設定</button></nav><section class="panel" id="content"></section></main><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script>
 'use strict';
 // 公開リポジトリに業務データを埋め込まない。読み込みはユーザーが選択したローカルファイルのみ。
 const KEY='eigyou-route-local-v1', districts=['青葉区','緑区','都筑区'];
@@ -74,4 +80,147 @@ $('staffList').querySelectorAll('[data-edit-staff]').forEach(b=>b.onclick=()=>{c
 $('staffList').querySelectorAll('[data-delete-staff]').forEach(b=>b.onclick=()=>{const i=Number(b.dataset.deleteStaff),n=db.staff[i];if(!confirm(`「${n}」を職員名簿から削除しますか？ 過去の履歴は残ります。`))return;db.staff.splice(i,1);for(const t of Object.values(assignments())){if(Array.isArray(t)){const j=t.indexOf(n);if(j>=0)t.splice(j,1)}else if(t&&typeof t==='object'){if(t.lead===n)t.lead='';if(Array.isArray(t.companions))t.companions=t.companions.filter(x=>x!==n)}}if(selectedStaff===n)selectedStaff='';persist();render()});}
 c.querySelectorAll('[data-delete-history]').forEach(b=>b.onclick=()=>deleteHistory(Number(b.dataset.deleteHistory)));if($('visitor'))$('visitor').addEventListener('change',e=>{selectedStaff=db.staff.includes(e.target.value)?e.target.value:'';try{sessionStorage.setItem(STAFF_KEY,selectedStaff)}catch(err){}});if($('addStaff'))$('addStaff').onclick=()=>{const n=$('newStaff').value.trim();if(!n)return alert('職員名を入力してください');if(!db.staff.includes(n))db.staff.push(n);selectedStaff=n;try{sessionStorage.setItem(STAFF_KEY,n)}catch(err){}persist();render()};c.querySelectorAll('[data-toggle]').forEach(b=>b.onclick=()=>toggle(b.dataset.toggle));c.querySelectorAll('[data-visit]').forEach(b=>b.onclick=()=>visit(b.dataset.visit));bindVisitors(c)}
 try{const saved=localStorage.getItem(KEY);if(saved){const parsed=JSON.parse(saved);if(validDb(parsed)){db=parsed;if(!db.staff.includes(selectedStaff))selectedStaff='';assignments();status(`${db.places.length}件の端末保存データを復元しました`)}}}catch(e){status('保存データを復元できませんでした')}render();
+</script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+(()=>{
+'use strict';
+const q=id=>document.getElementById(id);
+const escape=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+let client=null,user=null,customers=[],visits=[],today=new Set(),screen='customers',loading=false,recoveryMode=false;
+const selectedKey='eigyou-route-cloud-today-v1';
+const status=(msg,error=false)=>{q('cloudStatus').textContent=msg;q('cloudStatus').className=error?'cloud-error':'cloud-muted'};
+const authStatus=(msg,error=false)=>{q('cloudAuthStatus').textContent=msg;q('cloudAuthStatus').className=error?'cloud-error':'cloud-muted'};
+const recoveryStatus=(msg,error=false)=>{q('cloudRecoveryStatus').textContent=msg;q('cloudRecoveryStatus').className=error?'cloud-error':'cloud-muted'};
+const showRecovery=()=>{recoveryMode=true;q('cloudRecovery').classList.remove('cloud-hidden');q('cloudAuth').classList.add('cloud-hidden');q('cloudWorkspace').classList.add('cloud-hidden');recoveryStatus('再設定リンクを確認しました。新しいパスワードを入力してください。');q('cloudNewPassword').focus()};
+
+const fields=(x,names)=>names.map(n=>x?.[n]).find(v=>v!==null&&v!==undefined&&v!=='')??'';
+const name=c=>fields(c,['shop_name','name','customer_name','facility_name']);
+const area=c=>fields(c,['area','district','ward']);
+const address=c=>fields(c,['address','location']);
+const phone=c=>fields(c,['phone','telephone']);
+const code=c=>String(c.id);
+function setMode(cloud){q('cloud-app').hidden=!cloud;q('local-app').hidden=cloud;q('cloudMode').setAttribute('aria-pressed',String(cloud));q('offlineMode').setAttribute('aria-pressed',String(!cloud));}
+q('cloudMode').onclick=()=>setMode(true);q('offlineMode').onclick=()=>setMode(false);
+function getSelected(){try{const saved=JSON.parse(sessionStorage.getItem(selectedKey)||'[]');return Array.isArray(saved)?new Set(saved.map(String)):new Set()}catch{return new Set()}}
+function saveSelected(){try{sessionStorage.setItem(selectedKey,JSON.stringify([...today]))}catch{}}
+today=getSelected();
+function showLoggedIn(logged){if(recoveryMode){q('cloudAuth').classList.add('cloud-hidden');q('cloudWorkspace').classList.add('cloud-hidden');return;}q('cloudAuth').classList.remove('cloud-hidden');q('cloudWorkspace').classList.toggle('cloud-hidden',!logged);q('cloudLogout').classList.toggle('cloud-hidden',!logged);q('cloudLogin').disabled=logged;q('cloudPassword').value='';authStatus(logged?'ログイン済み。共有データへのアクセス権を確認します。':'未ログインです。');}
+async function connect(){
+  const url=q('cloudUrl').value.trim().replace(/\/$/,'');const key=q('cloudKey').value.trim();
+  if(!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(url))return status('Project URLが正しくありません。https://...supabase.co の形式にしてください。',true);
+  if(!key.startsWith('sb_publishable_'))return status('公開可能キー（sb_publishable_...）のみ入力できます。秘密鍵やservice_roleキーは使用しないでください。',true);
+  if(!window.supabase?.createClient)return status('Supabaseライブラリを読み込めませんでした。インターネット接続を確認してください。',true);
+  try{
+    client=window.supabase.createClient(url,key,{auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:true,flowType:'implicit'}});
+    client.auth.onAuthStateChange((event,session)=>{
+      if(event==='PASSWORD_RECOVERY')showRecovery();
+      // 再設定中は、ログイン画面や業務データを表示しない。
+    });
+    localStorage.setItem('eigyou-route-cloud-config-v1',JSON.stringify({url,key}));
+    q('cloudAuth').classList.remove('cloud-hidden');
+    // Supabase JS は接続初期化時にURL内のパスワード再設定トークンを処理する。
+    const {data:sessionData}=await client.auth.getSession();
+    const {data,error}=sessionData?.session?await client.auth.getUser():{data:{user:null},error:null};
+    user=error?null:data.user;
+    showLoggedIn(!!user);
+    status(recoveryMode?'再設定リンクを確認しました。下の画面で新しいパスワードを設定してください。':'接続先を設定しました。'+(user?' ログイン済みです。':' 職員ログインを行ってください。'));
+    if(user&&!recoveryMode)await refresh();
+  }catch(e){status('接続の準備に失敗しました: '+e.message,true)}
+}
+q('cloudConnect').onclick=connect;
+q('cloudLogin').onclick=async()=>{
+ if(!client)return authStatus('先に接続してください。',true);
+ const email=q('cloudEmail').value.trim(),password=q('cloudPassword').value;
+ if(!email||!password)return authStatus('メールアドレスとパスワードを入力してください。',true);
+ authStatus('ログインを確認しています…');
+ const {data,error}=await client.auth.signInWithPassword({email,password});
+ if(error)return authStatus('ログインできません: '+error.message,true);
+ user=data.user;showLoggedIn(true);status('ログイン成功。共有データを読み込みます。');await refresh();
+};
+q('cloudReset').onclick=async()=>{
+ if(!client)return authStatus('先に接続してください。',true);
+ const email=q('cloudEmail').value.trim();if(!email)return authStatus('メールアドレスを入力してください。',true);
+ const redirectTo='https://yoshi1965mi-code.github.io/eigyou-route-app/';
+ const {error}=await client.auth.resetPasswordForEmail(email,{redirectTo});
+ authStatus(error?'送信できません: '+error.message:'パスワード再設定メールの送信を受け付けました。届かない場合は迷惑メール等をご確認ください。',!!error);
+};
+q('cloudChangePassword').onclick=async()=>{
+ if(!client||!recoveryMode)return recoveryStatus('再設定メールのリンクから開き、Supabaseに接続してください。',true);
+ const password=q('cloudNewPassword').value,confirmPassword=q('cloudNewPasswordConfirm').value;
+ if(password.length<12)return recoveryStatus('新しいパスワードは12文字以上にしてください。',true);
+ if(password!==confirmPassword)return recoveryStatus('確認用パスワードが一致していません。',true);
+ q('cloudChangePassword').disabled=true;recoveryStatus('パスワードを変更しています…');
+ try{
+  const {data:sessionData}=await client.auth.getSession();
+  if(!sessionData?.session)throw new Error('再設定リンクの有効期限が切れているか、認証が完了していません。');
+  const {error}=await client.auth.updateUser({password});if(error)throw error;
+  q('cloudNewPassword').value='';q('cloudNewPasswordConfirm').value='';
+  // 再設定リンク由来の一時ログインは破棄し、新しいパスワードでログインし直す。
+  await client.auth.signOut();user=null;recoveryMode=false;
+  q('cloudRecovery').classList.add('cloud-hidden');showLoggedIn(false);
+  authStatus('パスワードを変更しました。メールアドレスと新しいパスワードでログインしてください。');
+  status('パスワードの再設定が完了しました。');
+ }catch(e){recoveryStatus('変更できませんでした: '+e.message,true)}finally{q('cloudChangePassword').disabled=false}
+};
+q('cloudLogout').onclick=async()=>{if(client)await client.auth.signOut();user=null;customers=[];visits=[];showLoggedIn(false);render();status('ログアウトしました。')};
+function helpfulError(error){const e=String(error?.message||error||'不明なエラー');
+ if(/schema cache|could not find the table|pgrst205|not exposed/i.test(e))return 'Data APIで該当テーブルが公開されていない可能性があります。SupabaseのData API設定と権限を確認してください。詳細: '+e;
+ if(/permission denied|42501|42503/i.test(e))return 'データのアクセス権限が不足しています。RLS・テーブル権限・職員承認を確認してください。詳細: '+e;
+ return e;
+}
+async function refresh(){
+ if(!client||!user||loading)return;
+ loading=true;status('営業先と共有訪問履歴を読み込んでいます…');
+ try{
+  const [cs,hs]=await Promise.all([client.from('customers').select('*').order('id',{ascending:true}).limit(1000),client.from('visit_history').select('*').order('visited_at',{ascending:false}).limit(200)]);
+  if(cs.error||hs.error){customers=cs.error?[]:(cs.data||[]);visits=hs.error?[]:(hs.data||[]);render();throw new Error([cs.error&&('営業先: '+helpfulError(cs.error)),hs.error&&('訪問履歴: '+helpfulError(hs.error))].filter(Boolean).join('\n'));}
+  customers=cs.data||[];visits=hs.data||[];
+  status('営業先 '+customers.length+'件、共有訪問履歴 '+visits.length+'件を取得しました。'+(!customers.length?' 職員の承認状態も確認してください。':''));render();
+ }catch(e){status('読み込みできません。'+e.message,true)}finally{loading=false}
+}
+q('cloudRefresh').onclick=refresh;
+q('cloudShowCustomers').onclick=()=>{screen='customers';render()};
+q('cloudShowToday').onclick=()=>{screen='today';render()};
+q('cloudShowHistory').onclick=()=>{screen='history';render()};
+function render(){
+ const target=q('cloudContent');if(!target)return;
+ if(!user){target.innerHTML='';return;}
+ if(screen==='history'){
+   target.innerHTML='<h3>職員共有の訪問履歴（最新200件）</h3>'+(visits.map(h=>{const c=customers.find(c=>code(c)===String(h.customer_id));return `<div class="cloud-history"><strong>${escape(name(c)||('営業先ID '+h.customer_id))}</strong><div class="cloud-muted">${escape(h.visited_at?new Date(h.visited_at).toLocaleString('ja-JP'):'')}　主担当：${escape(h.visitor_name||'未入力')}</div><div>同行者：${escape((h.companions||[]).join('・')||'なし')}</div><div>メモ：${escape(h.memo||'')}</div></div>`}).join('')||'<p>共有訪問履歴はまだありません。</p>');return;
+ }
+ const onlyToday=screen==='today';
+ target.innerHTML=`<h3>${onlyToday?'本日の営業先':'営業先一覧'}（<span id="cloudCount">0</span>件）</h3><div class="cloud-grid"><label>営業先名で検索<input id="cloudSearch" type="search" lang="ja" autocomplete="off" placeholder="営業先名だけで検索"></label><label>区<select id="cloudArea"><option value="">すべて</option><option>青葉区</option><option>緑区</option><option>都筑区</option></select></label></div><div id="cloudList"></div>`;
+ const list=q('cloudList'),search=q('cloudSearch'),areaFilter=q('cloudArea');
+ function draw(){
+   const find=search.value.toLocaleLowerCase(),ward=areaFilter.value;
+   const selected=customers.filter(c=>(!onlyToday||today.has(code(c)))&&(!ward||(area(c)||address(c)).includes(ward))&&String(name(c)).toLocaleLowerCase().includes(find));
+   q('cloudCount').textContent=String(selected.length);
+   list.innerHTML=selected.map(c=>`<div class="cloud-row"><strong>${escape(name(c)||'(名称未登録)')}</strong><div class="cloud-muted">${escape(area(c))}　${escape(address(c))}　${escape(phone(c))}</div><div class="cloud-actions"><button data-mark="${escape(code(c))}">${today.has(code(c))?'本日の営業先から外す':'本日の営業先に追加'}</button>${onlyToday?`<button class="primary" data-visit="${escape(code(c))}">訪問記録を登録</button>`:''}<a href="https://www.google.com/maps/search/?api=1&amp;query=${encodeURIComponent(address(c)||name(c))}" rel="noopener noreferrer" target="_blank">地図を開く</a></div></div>`).join('')||'<p>該当する営業先はありません。未承認の場合は閲覧できません。</p>';
+   list.querySelectorAll('[data-mark]').forEach(b=>b.onclick=()=>{const id=b.dataset.mark;today.has(id)?today.delete(id):today.add(id);saveSelected();draw()});
+   list.querySelectorAll('[data-visit]').forEach(b=>b.onclick=()=>recordVisit(b.dataset.visit));
+ }
+ let composing=false;search.addEventListener('compositionstart',()=>composing=true);search.addEventListener('compositionend',draw);search.addEventListener('input',e=>{if(!composing&&!e.isComposing)draw()});areaFilter.onchange=draw;draw();
+}
+async function recordVisit(id){
+ const c=customers.find(c=>code(c)===id);if(!c||!user)return;
+ const lead=prompt('訪問者（主担当）の名前を入力してください。');if(lead===null)return;
+ if(!lead.trim())return alert('主担当を入力してください。');
+ const companionsText=prompt('同行者をカンマで区切って入力してください（最大4人）。いなければ空欄でOKです。','');if(companionsText===null)return;
+ const companions=[...new Set(companionsText.split(/[、,，]/).map(v=>v.trim()).filter(Boolean))];
+ if(companions.length>4)return alert('同行者は最大4名です。');
+ const memo=prompt('訪問メモ（空欄でも構いません）','');if(memo===null)return;
+ if(!confirm('「'+name(c)+'」への訪問を職員共有データに登録しますか？'))return;
+ const row={customer_id:c.id,visited_by:user.id,visitor_name:lead.trim(),companions,memo};
+ const {error}=await client.from('visit_history').insert(row);
+ if(error)return alert('登録できませんでした。'+helpfulError(error));
+ today.delete(id);saveSelected();screen='history';await refresh();alert('共有訪問履歴に登録しました。');
+}
+try{const stored=JSON.parse(localStorage.getItem('eigyou-route-cloud-config-v1')||'null');if(stored?.url&&stored?.key){q('cloudUrl').value=stored.url;q('cloudKey').value=stored.key;status('前回の公開接続設定が残っています。「接続する」を押してください。')}}catch{}
+if(/(?:^|[&#])(error|error_code)=/.test(location.hash)){
+ status('再設定リンクが期限切れ、または無効な可能性があります。新しい再設定メールが必要です。',true);
+}else if(/(?:^|[&#])type=recovery(?:&|$)/.test(location.hash)){
+ status('パスワード再設定リンクを検出しました。公開可能キーを入力して「接続する」を押してください。');
+}
+setMode(true);render();
+})();
 </script></body></html>
