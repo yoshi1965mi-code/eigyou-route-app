@@ -12,7 +12,7 @@
 <div id="cloud-app"><div class="cloud-panel"><h2>職員共有モード</h2><p class="cloud-muted">営業先データはHTMLに含まれていません。Supabaseへの接続情報と職員ログインが必要です。秘密鍵（secret / service_role）は絶対に入力しないでください。</p><div class="cloud-grid"><label>Supabase Project URL<input id="cloudUrl" type="url" autocomplete="off" value="https://awrxftzzmzcquvoqmogc.supabase.co" placeholder="https://...supabase.co"></label><label>公開可能キー（sb_publishable_... のみ）<input id="cloudKey" type="password" autocomplete="off" placeholder="sb_publishable_..."></label></div><div class="cloud-actions"><button id="cloudConnect" class="primary">接続する</button><span class="cloud-muted">URLと公開可能キーはこの端末にだけ保存します。</span></div><p id="cloudStatus" role="status" class="cloud-muted">まだ接続していません。</p></div>
 <div class="cloud-panel cloud-hidden" id="cloudAuth"><h3>職員ログイン</h3><div class="cloud-grid"><label>メールアドレス<input id="cloudEmail" type="email" autocomplete="username" placeholder="メールアドレス"></label><label>パスワード<input id="cloudPassword" type="password" autocomplete="current-password" placeholder="パスワード"></label></div><div class="cloud-actions"><button id="cloudLogin" class="primary">ログイン</button><button id="cloudReset">パスワード再設定メール</button><button id="cloudLogout" class="cloud-hidden">ログアウト</button></div><p id="cloudAuthStatus" class="cloud-muted"></p></div>
 <div class="cloud-panel cloud-hidden" id="cloudRecovery"><h2>パスワードを変更する</h2><p class="cloud-muted">メールの再設定リンクから開いた場合は、新しいパスワードを2回入力してください。接続情報が未設定なら、上の「公開可能キー」を入力して「接続する」を押してください。</p><div class="cloud-grid"><label>新しいパスワード（12文字以上）<input id="cloudNewPassword" type="password" autocomplete="new-password" minlength="12" placeholder="新しいパスワード"></label><label>新しいパスワード（確認）<input id="cloudNewPasswordConfirm" type="password" autocomplete="new-password" minlength="12" placeholder="もう一度入力"></label></div><div class="cloud-actions"><button id="cloudChangePassword" class="primary">パスワードを変更する</button></div><p id="cloudRecoveryStatus" role="status" class="cloud-muted"></p></div>
-<div class="cloud-panel cloud-hidden" id="cloudWorkspace"><div class="cloud-actions"><button id="cloudRefresh" class="primary">共有データを更新</button><button id="cloudShowCustomers">営業先一覧</button><button id="cloudShowToday">本日の営業先</button><button id="cloudShowHistory">共有訪問履歴</button></div><p class="cloud-muted">営業先182件はSupabaseに登録済みです。読み込みにはcustomers/visit_historyをData APIに公開し、職員承認が必要です。画面上の表示件数は登録済み件数と異なる場合があります。</p><div id="cloudContent"></div><section class="cloud-panel" style="border:1px solid #d2e2ef;background:#f5f9fd"><h3>共有された営業ルート</h3><p class="cloud-muted">あなた宛てに共有されたルートを確認できます。配信担当者は自分が作成したルートも確認できます。</p><div class="cloud-actions"><button id="sharedRouteReload">共有ルートを更新</button></div><p id="sharedRouteStatus" class="cloud-muted"></p><div id="sharedRouteList"></div></section><section id="dispatcherPanel" class="cloud-panel cloud-hidden" style="border:1px solid #b8d4e8"><h3>会社から営業ルートを配信</h3><p class="cloud-muted">「本日の営業先」で選んだ訪問先を、指定した職員だけに共有します。</p><label style="display:block;margin-bottom:10px">ルート名<input id="sharedRouteTitle" type="text" maxlength="100" placeholder="例：10月27日 午前 青葉区ルート" style="width:100%"></label><p><strong>共有する職員を選択</strong></p><div id="dispatcherRecipients"></div><div class="cloud-actions" style="margin-top:12px"><button id="dispatchRouteSave" class="primary">選んだ職員にルートを配信</button></div><p id="dispatcherStatus" class="cloud-muted"></p></section></div></div><main class="wrap" id="local-app" hidden><div class="notice"><b>情報保護：</b>営業先データはこのHTMLには含まれていません。Excelファイルは端末内で読み込みます。GitHubにはExcelファイルや書き出したJSONをアップロードしないでください。端末間の自動同期は未対応です。別々のスマホの履歴は共有されません。</div><section class="panel"><h2>① Excelデータの読み込み</h2><p class="muted">お手元の .xlsm / .xlsx を選択してください。初回読み込みにはインターネット接続が必要です。VBAマクロは実行しません。</p><input id="file" type="file" accept=".xlsx,.xlsm"><div class="toolbar"><button id="save" class="primary">端末に保存</button><button id="export">バックアップを出力</button><button id="import">バックアップを読み込む</button><input type="file" id="jsonFile" accept=".json" hidden></div><div id="status" class="muted" role="status">データ未読み込み</div></section><nav class="tabs" aria-label="画面切り替え"><button data-tab="list" aria-selected="true">営業先検索</button><button data-tab="today">本日の営業先</button><button data-tab="history">訪問履歴</button><button data-tab="summary">集計・設定</button></nav><section class="panel" id="content"></section></main><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script>
+<div class="cloud-panel cloud-hidden" id="cloudWorkspace"><div class="cloud-actions"><button id="cloudRefresh" class="primary">共有データを更新</button><button id="cloudShowCustomers">営業先一覧</button><button id="cloudShowToday">本日の営業先</button><button id="cloudShowHistory">共有訪問履歴</button></div><p class="cloud-muted">営業先182件はSupabaseに登録済みです。読み込みにはcustomers/visit_historyをData APIに公開し、職員承認が必要です。画面上の表示件数は登録済み件数と異なる場合があります。</p><div id="cloudContent"></div><section class="cloud-panel" id="staffManagementPanel" style="border:1px solid #d2e2ef"><h3>職員管理</h3><p class="cloud-muted">ログイン中の職員は新しい職員に招待メールを送れます。招待された人はメールの案内に従って登録します。利用停止・再開は管理担当者専用で、現在は準備中です。</p><div class="cloud-grid"><label>新しい職員の氏名<input id="staffInviteName" type="text" lang="ja" maxlength="100" autocomplete="off" placeholder="例：山田 太郎"></label><label>新しい職員のメールアドレス<input id="staffInviteEmail" type="email" maxlength="254" autocomplete="off" placeholder="例：staff@example.com"></label></div><div class="cloud-actions"><button id="staffInviteSend" class="primary" type="button">職員に招待メールを送る</button><button id="staffListRefresh" type="button">職員一覧を更新</button></div><p id="staffInviteStatus" class="cloud-muted" role="status"></p><h4>登録済み職員</h4><div id="staffDirectoryList" class="cloud-muted">読み込み前です。</div></section><section class="cloud-panel" style="border:1px solid #d2e2ef;background:#f5f9fd"><h3>共有された営業ルート</h3><p class="cloud-muted">あなた宛てに共有されたルートを確認できます。配信担当者は自分が作成したルートも確認できます。</p><div class="cloud-actions"><button id="sharedRouteReload">共有ルートを更新</button></div><p id="sharedRouteStatus" class="cloud-muted"></p><div id="sharedRouteList"></div></section><section id="dispatcherPanel" class="cloud-panel cloud-hidden" style="border:1px solid #b8d4e8"><h3>会社から営業ルートを配信</h3><p class="cloud-muted">「本日の営業先」で選んだ訪問先を、指定した職員だけに共有します。</p><label style="display:block;margin-bottom:10px">ルート名<input id="sharedRouteTitle" type="text" maxlength="100" placeholder="例：10月27日 午前 青葉区ルート" style="width:100%"></label><p><strong>共有する職員を選択</strong></p><div id="dispatcherRecipients"></div><div class="cloud-actions" style="margin-top:12px"><button id="dispatchRouteSave" class="primary">選んだ職員にルートを配信</button></div><p id="dispatcherStatus" class="cloud-muted"></p></section></div></div><main class="wrap" id="local-app" hidden><div class="notice"><b>情報保護：</b>営業先データはこのHTMLには含まれていません。Excelファイルは端末内で読み込みます。GitHubにはExcelファイルや書き出したJSONをアップロードしないでください。端末間の自動同期は未対応です。別々のスマホの履歴は共有されません。</div><section class="panel"><h2>① Excelデータの読み込み</h2><p class="muted">お手元の .xlsm / .xlsx を選択してください。初回読み込みにはインターネット接続が必要です。VBAマクロは実行しません。</p><input id="file" type="file" accept=".xlsx,.xlsm"><div class="toolbar"><button id="save" class="primary">端末に保存</button><button id="export">バックアップを出力</button><button id="import">バックアップを読み込む</button><input type="file" id="jsonFile" accept=".json" hidden></div><div id="status" class="muted" role="status">データ未読み込み</div></section><nav class="tabs" aria-label="画面切り替え"><button data-tab="list" aria-selected="true">営業先検索</button><button data-tab="today">本日の営業先</button><button data-tab="history">訪問履歴</button><button data-tab="summary">集計・設定</button></nav><section class="panel" id="content"></section></main><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script>
 'use strict';
 // 公開リポジトリに業務データを埋め込まない。読み込みはユーザーが選択したローカルファイルのみ。
 const KEY='eigyou-route-local-v1', districts=['青葉区','緑区','都筑区'];
@@ -91,7 +91,7 @@ try{const saved=localStorage.getItem(KEY);if(saved){const parsed=JSON.parse(save
 const q=id=>document.getElementById(id);
 const escape=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 let client=null,user=null,customers=[],visits=[],today=new Set(),screen='customers',loading=false,recoveryMode=false;
-let sharedRoutes=[],directory=[],isDispatcher=false;
+let sharedRoutes=[],directory=[],staffDirectory=[],isDispatcher=false;
 const selectedKey='eigyou-route-cloud-today-v1';
  const BASE_ADDRESS='横浜市青葉区荏田西2-29-24';
  const routeState={mode:'facility',custom:'',end:'facility'};
@@ -169,7 +169,7 @@ q('cloudChangePassword').onclick=async()=>{
   status('パスワードの再設定が完了しました。');
  }catch(e){recoveryStatus('変更できませんでした: '+e.message,true)}finally{q('cloudChangePassword').disabled=false}
 };
-q('cloudLogout').onclick=async()=>{if(client)await client.auth.signOut();user=null;customers=[];visits=[];sharedRoutes=[];directory=[];isDispatcher=false;showLoggedIn(false);render();renderSharedRoutes();q('dispatcherPanel').classList.add('cloud-hidden');status('ログアウトしました。')};
+q('cloudLogout').onclick=async()=>{if(client)await client.auth.signOut();user=null;customers=[];visits=[];sharedRoutes=[];directory=[];staffDirectory=[];isDispatcher=false;showLoggedIn(false);renderStaffDirectory();render();renderSharedRoutes();q('dispatcherPanel').classList.add('cloud-hidden');status('ログアウトしました。')};
 function helpfulError(error){const e=String(error?.message||error||'不明なエラー');
  if(/schema cache|could not find the table|pgrst205|not exposed/i.test(e))return 'Data APIで該当テーブルが公開されていない可能性があります。SupabaseのData API設定と権限を確認してください。詳細: '+e;
  if(/permission denied|42501|42503/i.test(e))return 'データのアクセス権限が不足しています。RLS・テーブル権限・職員承認を確認してください。詳細: '+e;
@@ -182,7 +182,7 @@ async function refresh(){
   const [cs,hs]=await Promise.all([client.from('customers').select('*').order('id',{ascending:true}).limit(1000),client.from('visit_history').select('*').order('visited_at',{ascending:false}).limit(200)]);
   if(cs.error||hs.error){customers=cs.error?[]:(cs.data||[]);visits=hs.error?[]:(hs.data||[]);render();throw new Error([cs.error&&('営業先: '+helpfulError(cs.error)),hs.error&&('訪問履歴: '+helpfulError(hs.error))].filter(Boolean).join('\n'));}
   customers=cs.data||[];visits=hs.data||[];
-  status('営業先 '+customers.length+'件、共有訪問履歴 '+visits.length+'件を取得しました。'+(!customers.length?' 職員の承認状態も確認してください。':''));render();await refreshSharedRoutes();
+  status('営業先 '+customers.length+'件、共有訪問履歴 '+visits.length+'件を取得しました。'+(!customers.length?' 職員の承認状態も確認してください。':''));render();await Promise.all([refreshSharedRoutes(),refreshStaffDirectory()]);
  }catch(e){status('読み込みできません。'+e.message,true)}finally{loading=false}
 }
 q('cloudRefresh').onclick=refresh;
@@ -190,6 +190,46 @@ q('cloudShowCustomers').onclick=()=>{screen='customers';render()};
 q('cloudShowToday').onclick=()=>{screen='today';render()};
 q('cloudShowHistory').onclick=()=>{screen='history';render()};
 
+ const staffInviteStatus=(message,error=false)=>{q('staffInviteStatus').textContent=message;q('staffInviteStatus').className=error?'cloud-error':'cloud-muted'};
+ function renderStaffDirectory(){
+   const target=q('staffDirectoryList');target.replaceChildren();
+   if(!user){target.textContent='ログインすると職員一覧を表示します。';return;}
+   if(!staffDirectory.length){target.textContent='表示できる職員がいません。';return;}
+   for(const member of staffDirectory){
+     const line=document.createElement('div');line.className='cloud-row';
+     const label=document.createElement('strong');label.textContent=member.display_name||'氏名未登録';
+     const info=document.createElement('span');info.className='cloud-muted';info.textContent=member.is_active?' ／ 利用中':' ／ 利用停止';
+     line.append(label,info);target.append(line);
+   }
+ }
+ async function refreshStaffDirectory(){
+   if(!client||!user)return;
+   const {data,error}=await client.from('staff_members').select('user_id,display_name,is_active').order('display_name',{ascending:true}).limit(100);
+   if(error){staffInviteStatus('職員一覧を取得できません：'+helpfulError(error),true);return;}
+   staffDirectory=data||[];renderStaffDirectory();
+ }
+ q('staffListRefresh').onclick=refreshStaffDirectory;
+ q('staffInviteSend').onclick=async()=>{
+   if(!client||!user)return staffInviteStatus('先にログインしてください。',true);
+   const name=q('staffInviteName').value.trim(),email=q('staffInviteEmail').value.trim().toLowerCase();
+   if(!name||name.length>100||!email||email.length>254||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return staffInviteStatus('職員の氏名と正しいメールアドレスを入力してください。',true);
+   if(!confirm('「'+name+'」さんに登録用の招待メールを送信しますか？'))return;
+   const button=q('staffInviteSend');button.disabled=true;staffInviteStatus('招待メールを送信しています…');
+   try{
+     const {data:sessionData,error:sessionError}=await client.auth.getSession();
+     const token=sessionData?.session?.access_token;
+     if(sessionError||!token)throw Error('ログイン情報を取得できません。ログインし直してください。');
+     const {data,error}=await client.functions.invoke('staff-management',{
+       body:{action:'invite',name,email},headers:{Authorization:'Bearer '+token}
+     });
+     if(error)throw Error(data?.error||error.message||'サーバーへの接続に失敗しました');
+     if(!data?.success)throw Error(data?.error||'登録が確認できませんでした');
+     q('staffInviteName').value='';q('staffInviteEmail').value='';
+     staffInviteStatus('招待メールの送信処理が完了しました。相手にメールが届いたか確認してください。');
+     await refreshStaffDirectory();
+   }catch(e){staffInviteStatus('招待できませんでした：'+e.message,true)}
+   finally{button.disabled=false}
+ };
 const sharedStatus=(text,error=false)=>{q('sharedRouteStatus').textContent=text;q('sharedRouteStatus').className=error?'cloud-error':'cloud-muted'};
 const dispatcherStatus=(text,error=false)=>{q('dispatcherStatus').textContent=text;q('dispatcherStatus').className=error?'cloud-error':'cloud-muted'};
 async function refreshSharedRoutes(){
